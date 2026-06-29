@@ -14,6 +14,7 @@ import {
   BarChart2,
 } from "lucide-react";
 import { User, Role } from "../../types";
+import logoSvg from "../../assets/logo.svg";
 
 interface SidebarProps {
   currentUser: User;
@@ -66,18 +67,15 @@ export default function Sidebar({
       {/* ── Top ── */}
       <div className="flex flex-col gap-5">
         {/* Logo row */}
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-twitter-blue to-cyan-400 flex items-center justify-center shadow-sm overflow-hidden">
-              <img src="/logo.png" alt="CivicVoice" className="w-full h-full object-contain" />
+        <div className="flex items-center justify-center relative w-full">
+          <div className="flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden">
+              <img src={logoSvg} alt="BirdView" className="w-full h-full object-contain" />
             </div>
-            <span className="font-display font-bold text-lg tracking-tight bg-gradient-to-r from-twitter-blue to-cyan-500 bg-clip-text text-transparent">
-              CivicVoice
-            </span>
           </div>
           <button
             onClick={onCloseMobile}
-            className="flex md:hidden items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition"
+            className="absolute right-0 flex md:hidden items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition"
           >
             <X className="w-4.5 h-4.5" />
           </button>
@@ -101,11 +99,7 @@ export default function Sidebar({
                   className={`w-5 h-5 shrink-0 ${active ? "text-twitter-blue stroke-[2.5]" : "text-slate-400"}`}
                 />
                 <span className="text-[14px]">{label}</span>
-                {(id === "forums" || id === "dashboard") && (
-                  <span className="ml-auto text-[9px] font-extrabold bg-twitter-blue text-white px-1.5 py-0.5 rounded-full">
-                    NEW
-                  </span>
-                )}
+
               </button>
             );
           })}

@@ -56,7 +56,7 @@ export default function App() {
     bio: "Civic-minded resident. Passionate about local infrastructure, public parks, and ward greening initiatives.",
   });
 
-  const [feedItems, setFeedItems] = useState<FeedItem[]>(INITIAL_FEED_ITEMS);
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [citizens, setCitizens] = useState<User[]>(
     MOCK_CITIZENS.map((c) => ({
       ...c,
@@ -69,16 +69,43 @@ export default function App() {
     }))
   );
 
-  const [commentsMap, setCommentsMap] = useState<{ [key: string]: Comment[] }>({
-    ...MOCK_REPORTS_COMMENTS,
-    ...MOCK_POLL_COMMENTS,
-  });
+  const [commentsMap, setCommentsMap] = useState<{ [key: string]: Comment[] }>({});
 
   const [selectedItem, setSelectedItem] = useState<FeedItem | null>(null);
   const [showDemographics, setShowDemographics] = useState(false);
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
   const [directorySearch, setDirectorySearch] = useState("");
   const [alertMsg, setAlertMsg] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
+
+  // Fetch feed items on load
+  React.useEffect(() => {
+    fetch("/api/feed")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setFeedItems(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch feed items:", err);
+      });
+  }, []);
+
+  // Fetch comments when selected item changes
+  React.useEffect(() => {
+    if (selectedItem) {
+      fetch(`/api/feed/${selectedItem.id}/comments`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setCommentsMap((p) => ({ ...p, [selectedItem.id]: data }));
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch comments:", err);
+        });
+    }
+  }, [selectedItem?.id]);
 
   const showAlert = (text: string, type: "success" | "error" | "info" = "info") => {
     setAlertMsg({ type, text });
@@ -101,7 +128,7 @@ export default function App() {
   const handleSwitchPersona = (role: Role) => {
     if (role === "official") {
       const c = MOCK_COUNCILLORS.find((c) => c.city === selectedCity) || MOCK_COUNCILLORS[0];
-      setCurrentUser({ ...c, following: [], followersCount: 520, followingCount: 89, bio: "Elected Ward Councillor on CivicVoice." });
+      setCurrentUser({ ...c, following: [], followersCount: 520, followingCount: 89, bio: "Elected Ward Councillor on BirdView." });
       showAlert(`Switched to Official view as ${c.displayName}`, "success");
     } else {
       const c = MOCK_CITIZENS.find((c) => c.city === selectedCity) || MOCK_CITIZENS[0];
@@ -122,8 +149,9 @@ export default function App() {
     showAlert(isFollowing ? "Unfollowed." : "Following user!", isFollowing ? "info" : "success");
   };
 
-  const handleLikeFeedItem = (itemId: string, e?: React.MouseEvent) => {
+  const handleLikeFeedItem = async (itemId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
+    // Optimistic update
     setFeedItems((prev) => prev.map((item) => {
       if (item.id !== itemId) return item;
       const hasLiked = item.upvotedBy.includes(currentUser.id);
@@ -135,33 +163,49 @@ export default function App() {
       if (selectedItem?.id === itemId) setSelectedItem(updated);
       return updated;
     }));
+
+    try {
+      const res = await fetch(`/api/feed/${itemId}/upvote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUser.id, isVerified: currentUser.isVerified }),
+      });
+      const updatedItem = await res.json();
+      setFeedItems((prev) => prev.map((item) => item.id === itemId ? updatedItem : item));
+      if (selectedItem?.id === itemId) setSelectedItem(updatedItem);
+    } catch (err) {
+      console.error("Failed to upvote item on backend:", err);
+    }
   };
 
   const handleAddComment = async (text: string): Promise<boolean> => {
     if (!selectedItem) return false;
     try {
-      const res = await fetch("/api/gemini/moderate-comment", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ commentText: text }),
+      const res = await fetch(`/api/feed/${selectedItem.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ author: currentUser, text }),
       });
       const data = await res.json();
-      const newComment: Comment = {
-        id: `com_${Date.now()}`, author: currentUser,
-        text: data.moderatedText || text, createdAt: new Date().toISOString(),
-        upvotes: 0, upvotedBy: [], isFlagged: data.isFlagged || false,
-      };
-      if (data.isFlagged) showAlert("Comment flagged by AI moderation.", "error");
-      else showAlert("Comment published!", "success");
-      setCommentsMap((p) => ({ ...p, [selectedItem.id]: [newComment, ...(p[selectedItem.id] || [])] }));
-      setFeedItems((p) => p.map((item) => {
-        if (item.id !== selectedItem.id) return item;
-        const updated = { ...item, commentsCount: item.commentsCount + 1 };
-        setSelectedItem(updated);
-        return updated;
+      if (data.isFlagged) {
+        showAlert("Comment flagged by AI moderation.", "error");
+      } else {
+        showAlert("Comment published!", "success");
+      }
+      
+      const newComment = data.comment;
+      const updatedItem = data.updatedItem;
+      
+      setCommentsMap((p) => ({
+        ...p,
+        [selectedItem.id]: [newComment, ...(p[selectedItem.id] || [])]
       }));
+      setFeedItems((p) => p.map((item) => item.id === selectedItem.id ? updatedItem : item));
+      setSelectedItem(updatedItem);
       return true;
-    } catch {
-      showAlert("Comment posted (offline fallback).", "info");
+    } catch (err) {
+      console.error("Failed to add comment:", err);
+      showAlert("Failed to post comment.", "error");
       return false;
     }
   };
@@ -182,93 +226,106 @@ export default function App() {
     }
   };
 
-  const handleSubmitOfficialResponse = (text: string) => {
+  const handleSubmitOfficialResponse = async (text: string) => {
     if (!selectedItem) return;
-    setFeedItems((p) => p.map((item) => {
-      if (item.id !== selectedItem.id) return item;
-      const updated: FeedItem = { ...item, status: "in_progress", officialResponse: { id: `res_${Date.now()}`, responder: currentUser, text, createdAt: new Date().toISOString() } };
-      setSelectedItem(updated);
-      return updated;
-    }));
-    showAlert("Official response posted!", "success");
+    try {
+      const res = await fetch(`/api/feed/${selectedItem.id}/official-response`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ responder: currentUser, text }),
+      });
+      const updatedItem = await res.json();
+      setFeedItems((p) => p.map((item) => item.id === selectedItem.id ? updatedItem : item));
+      setSelectedItem(updatedItem);
+      showAlert("Official response posted!", "success");
+    } catch (err) {
+      console.error("Failed to post official response:", err);
+    }
   };
 
-  const handleVotePoll = (pollId: string, optionId: string, e?: React.MouseEvent) => {
+  const handleVotePoll = async (pollId: string, optionId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setFeedItems((p) => p.map((item) => {
-      if (item.id !== pollId) return item;
-      if ((item.pollVotedBy || {})[currentUser.id]) { showAlert("Already voted.", "error"); return item; }
-      const updatedOptions = (item.pollOptions || []).map((opt) => opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt);
-      const updated: FeedItem = {
-        ...item,
-        pollOptions: updatedOptions,
-        pollVotedBy: { ...(item.pollVotedBy || {}), [currentUser.id]: optionId },
-        pollTotalVotes: (item.pollTotalVotes || 0) + 1,
-      };
-      if (selectedItem?.id === pollId) setSelectedItem(updated);
+    const item = feedItems.find((itm) => itm.id === pollId);
+    if (item && (item.pollVotedBy || {})[currentUser.id]) {
+      showAlert("Already voted.", "error");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/feed/${pollId}/vote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUser.id, optionId }),
+      });
+      const updatedItem = await res.json();
+      setFeedItems((p) => p.map((itm) => itm.id === pollId ? updatedItem : itm));
+      if (selectedItem?.id === pollId) setSelectedItem(updatedItem);
       showAlert("Vote registered!", "success");
-      return updated;
-    }));
+    } catch (err) {
+      console.error("Failed to register vote:", err);
+    }
   };
 
-  const handleVerifyReport = (itemId: string, e?: React.MouseEvent) => {
+  const handleVerifyReport = async (itemId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setFeedItems((prev) => prev.map((item) => {
-      if (item.id !== itemId) return item;
-      const verifications = item.communityVerifications || [];
-      const hasVerified = verifications.includes(currentUser.id);
-      const updated = {
-        ...item,
-        communityVerifications: hasVerified
-          ? verifications.filter(id => id !== currentUser.id)
-          : [...verifications, currentUser.id],
-      };
-      if (selectedItem?.id === itemId) setSelectedItem(updated);
-      return updated;
-    }));
-    showAlert("Verification recorded! +10 Civic Points", "success");
-    setCurrentUser(p => ({ ...p, civicPoints: p.civicPoints + 10 }));
+    try {
+      const res = await fetch(`/api/feed/${itemId}/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUser.id }),
+      });
+      const updatedItem = await res.json();
+      setFeedItems((prev) => prev.map((item) => item.id === itemId ? updatedItem : item));
+      if (selectedItem?.id === itemId) setSelectedItem(updatedItem);
+      showAlert("Verification recorded! +10 Civic Points", "success");
+      setCurrentUser(p => ({ ...p, civicPoints: p.civicPoints + 10 }));
+    } catch (err) {
+      console.error("Failed to verify report:", err);
+    }
   };
 
-  const handlePublishFeedItem = (payload: {
+  const handlePublishFeedItem = async (payload: {
     type: "post" | "report" | "poll"; content: string; image?: string;
     title?: string; category?: any; severity?: Severity;
     locationName?: string; latitude?: number; longitude?: number;
     pollQuestion?: string; pollOptions?: string[];
   }) => {
-    const id = `${payload.type}_${Date.now()}`;
-    let item: Partial<FeedItem> = {
-      id, type: payload.type, author: currentUser,
-      createdAt: new Date().toISOString(), upvotes: 0, upvotedBy: [], commentsCount: 0,
-      city: selectedCity, ward: selectedWard === "All Wards" ? currentUser.ward : selectedWard,
-      content: payload.content, image: payload.image,
-    };
-    if (payload.type === "report") {
-      item = { ...item, title: payload.title, category: payload.category, severity: payload.severity, status: "open", locationName: payload.locationName, latitude: payload.latitude, longitude: payload.longitude };
-    } else if (payload.type === "poll") {
-      item = {
-        ...item, pollQuestion: payload.pollQuestion,
-        pollOptions: (payload.pollOptions || []).map((o, i) => ({ id: `opt_${i}_${Date.now()}`, text: o, votes: 0 })),
-        pollVotedBy: {}, pollTotalVotes: 0,
-        pollEndsAt: new Date(Date.now() + 7 * 86400000).toISOString(),
-        ageBreakdown: { "18-25 yrs": 25, "26-40 yrs": 45, "41-60 yrs": 20, "60+ yrs": 10 },
-        areaBreakdown: { [selectedWard === "All Wards" ? "Main Block" : selectedWard]: 100 },
-      };
+    try {
+      const res = await fetch("/api/feed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...payload,
+          author: currentUser,
+          city: selectedCity,
+          ward: selectedWard === "All Wards" ? currentUser.ward : selectedWard,
+        }),
+      });
+      const newItem = await res.json();
+      setFeedItems((prev) => [newItem, ...prev]);
+      const pts = payload.type === "report" ? 25 : 10;
+      setCurrentUser((p) => ({ ...p, civicPoints: p.civicPoints + pts }));
+      showAlert(payload.type === "report" ? `Grievance filed! +${pts} Civic Points` : "Post published!", "success");
+    } catch (err) {
+      console.error("Failed to publish item:", err);
+      showAlert("Failed to publish post.", "error");
     }
-    setFeedItems([item as FeedItem, ...feedItems]);
-    const pts = payload.type === "report" ? 25 : 10;
-    setCurrentUser((p) => ({ ...p, civicPoints: p.civicPoints + pts }));
-    showAlert(payload.type === "report" ? `Grievance filed! +${pts} Civic Points` : "Post published!", "success");
   };
 
-  const handleUpdateStatus = (itemId: string, status: Status) => {
-    setFeedItems((p) => p.map((item) => {
-      if (item.id !== itemId) return item;
-      const updated = { ...item, status };
-      if (selectedItem?.id === itemId) setSelectedItem(updated);
-      return updated;
-    }));
-    showAlert(`Status → ${status.replace("_", " ")}`, "success");
+  const handleUpdateStatus = async (itemId: string, status: Status) => {
+    try {
+      const res = await fetch(`/api/feed/${itemId}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const updatedItem = await res.json();
+      setFeedItems((p) => p.map((item) => item.id === itemId ? updatedItem : item));
+      if (selectedItem?.id === itemId) setSelectedItem(updatedItem);
+      showAlert(`Status → ${status.replace("_", " ")}`, "success");
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
   };
 
   const handleVerifySuccess = () => {
@@ -335,7 +392,7 @@ export default function App() {
               <Menu className="w-5 h-5" />
             </button>
             <h1 className="font-display font-black text-xl text-slate-900 tracking-tight">
-              {MAIN_HEADER_TITLES[activeTab] || "CivicVoice"}
+              {MAIN_HEADER_TITLES[activeTab] || "BirdView"}
             </h1>
             {activeTab === "feed" && (
               <span className="ml-auto text-[10px] font-bold text-twitter-blue bg-twitter-light px-2 py-0.5 rounded-full border border-twitter-blue/20">
@@ -424,6 +481,7 @@ export default function App() {
           onOpenVerifyModal={() => setIsVerifyModalOpen(true)}
           onSelectTag={(tag) => { setSearchQuery(tag); setActiveTab("feed"); }}
           isCurrentUserVerified={currentUser.isVerified}
+          searchQuery={searchQuery}
           onSearch={(q) => { setSearchQuery(q); setActiveTab("feed"); }}
           onOpenForums={() => setActiveTab("forums")}
           onOpenDashboard={() => setActiveTab("dashboard")}

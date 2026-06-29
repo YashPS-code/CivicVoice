@@ -399,7 +399,7 @@ export const INITIAL_FEED_ITEMS: FeedItem[] = [
     city: "Mumbai",
     ward: "Ward 12 (Andheri West)",
     title: "Hazardous Crater-Sized Potholes on Link Road",
-    content: "There are multiple deep potholes right after the main intersection on Link Road, Andheri West. During monsoons, these submerge under water and become invisible traps for two-wheelers. Two minor accidents happened yesterday alone.",
+    content: "There are multiple deep potholes right after the main intersection on Link Road, Andheri West. During monsoons, these submerge under water and become invisible traps for two-wheelers. Two minor accidents happened yesterday alone. #PotholeFreeMumbai",
     category: "potholes",
     status: "in_progress",
     locationName: "Near Juhu Circle, Link Road",
@@ -423,6 +423,7 @@ export const INITIAL_FEED_ITEMS: FeedItem[] = [
     ward: "Ward 12 (Andheri West)",
     pollQuestion: "Should Ward 12 introduce a 100% car-free pedestrian street on weekends?",
     content: "Proposal to make Andheri Link Road (selected shopping strip) pedestrian-only on Saturdays and Sundays between 4 PM to 10 PM. This aims to reduce commercial pollution, promote local foot traffic, and provide child-safe open space.",
+    category: "traffic",
     pollOptions: [
       { id: "o1", text: "Yes, fully support it", votes: 412 },
       { id: "o2", text: "Support, but only on Sundays", votes: 231 },
@@ -468,7 +469,7 @@ export const INITIAL_FEED_ITEMS: FeedItem[] = [
     city: "Bengaluru",
     ward: "Ward 54 (HSR Layout)",
     title: "Broken Streetlights on 17th Cross Road",
-    content: "An entire block of 17th Cross, HSR Layout has non-functioning streetlights for the past five nights. It is completely dark, causing safety concerns for women and senior citizens walking in the evening.",
+    content: "An entire block of 17th Cross, HSR Layout has non-functioning streetlights for the past five nights. It is completely dark, causing safety concerns for women and senior citizens walking in the evening. #HSRStreetlightsFixed",
     category: "streetlights",
     status: "under_review",
     locationName: "17th Cross Road, Sector 3",
@@ -486,6 +487,7 @@ export const INITIAL_FEED_ITEMS: FeedItem[] = [
     ward: "Ward 54 (HSR Layout)",
     pollQuestion: "Where should the new Ward 54 community park budget be prioritized?",
     content: "The municipal body has allocated ₹25 Lakhs for green development in HSR Layout. Vote on your preferred primary amenity layout to finalize the architectural blueprint.",
+    category: "others",
     pollOptions: [
       { id: "op_1", text: "Children play area & swings", votes: 198 },
       { id: "op_2", text: "Jogging track & outdoor gym", votes: 312 },
@@ -518,7 +520,7 @@ export const INITIAL_FEED_ITEMS: FeedItem[] = [
     commentsCount: 2,
     city: "Delhi",
     ward: "Ward 8 (Saket)",
-    content: "Happy to see the AQI in Delhi is under 120 today after last night's rainfall! 🌧️ However, let's keep working on long-term measures. I urge everyone to carpool and use metro services. Let's make Delhi breathable! #DelhiAirQuality #BreathClean",
+    content: "Happy to see the AQI in Delhi is under 120 today after last night's rainfall! 🌧️ However, let's keep working on long-term measures. I urge everyone to carpool and use metro services. Let's make Delhi breathable! #DelhiAirQuality #BreathClean #DelhiCleanAirPlan",
     image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&h=400&q=80"
   },
   {
@@ -556,6 +558,7 @@ export const INITIAL_FEED_ITEMS: FeedItem[] = [
     ward: "Ward 8 (Saket)",
     pollQuestion: "Do you support ban on heavy commercial trucks entering Saket during day?",
     content: "To combat severe noise, dust pollution, and pedestrian safety hazards, should heavy trucks be banned between 8 AM and 9 PM?",
+    category: "pollution",
     pollOptions: [
       { id: "op3_1", text: "Yes, total daytime ban", votes: 612 },
       { id: "op3_2", text: "Ban only during school hours", votes: 120 },
@@ -587,7 +590,7 @@ export const INITIAL_FEED_ITEMS: FeedItem[] = [
     city: "Chennai",
     ward: "Ward 112 (Adyar)",
     title: "Illegal Garbage Dumping & Burning on Lake Road",
-    content: "Some local commercial vendors are dumping plastics and trash on the Adyar Lake shore and burning it late at night. The toxic smoke gets inside residential homes and is causing breathing issues for children.",
+    content: "Some local commercial vendors are dumping plastics and trash on the Adyar Lake shore and burning it late at night. The toxic smoke gets inside residential homes and is causing breathing issues for children. #SaveAdyarEstuary #AdyarParkCleanup",
     category: "garbage",
     status: "open",
     image: "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&w=600&h=400&q=80",

@@ -98,7 +98,7 @@ export default function ProfileTab({
             <span className="text-lg">🛡️</span>
             <div className="flex flex-col leading-none justify-center">
               <span className="font-bold text-slate-700 text-[11px]">Sentinel Warden</span>
-              <span className="text-[9px] text-slate-400 mt-0.5">Joined CivicVoice</span>
+              <span className="text-[9px] text-slate-400 mt-0.5">Joined BirdView</span>
             </div>
           </div>
 

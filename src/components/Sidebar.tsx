@@ -13,6 +13,7 @@ import {
   ChevronDown
 } from "lucide-react";
 import { User, Role } from "../types";
+import logoSvg from "../assets/logo.svg";
 
 interface SidebarProps {
   currentUser: User;
@@ -64,18 +65,14 @@ export default function Sidebar({
         {/* Logo */}
         <div className="relative flex items-center justify-center w-full">
           {/* Logo + Title */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 overflow-hidden p-1">
+          <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center w-12 h-12 overflow-hidden">
               <img
-                src="/logo.png"
+                src={logoSvg}
                 alt="BirdView logo"
                 className="w-full h-full object-contain"
               />
             </div>
-
-            <span className="font-sans font-bold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-twitter-blue bg-clip-text text-transparent">
-              BirdView
-            </span>
           </div>
 
           {/* Close Button */}

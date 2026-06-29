@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Megaphone, ShieldCheck, ShieldAlert, ArrowRight, UserPlus, LogIn, Sparkles } from "lucide-react";
 import { User, Role, City } from "../types";
 import { MOCK_CITIZENS, MOCK_COUNCILLORS } from "../mockData";
+import logoSvg from "../assets/logo.svg";
 
 interface LoginSignupProps {
   onLoginSuccess: (user: User) => void;
@@ -57,7 +58,7 @@ export default function LoginSignup({
         following: [],
         followersCount: 520,
         followingCount: 89,
-        bio: "Elected Ward Councillor. Ready to listen to grievances and issue administrative resolutions on CivicVoice."
+        bio: "Elected Ward Councillor. Ready to listen to grievances and issue administrative resolutions on BirdView."
       };
       onLoginSuccess(councillor);
       showAlert("Logged in successfully as Councillor Sandeep Hegde!", "success");
@@ -98,7 +99,7 @@ export default function LoginSignup({
           following: [],
           followersCount: matchedUser.followersCount || 10,
           followingCount: matchedUser.followingCount || 10,
-          bio: matchedUser.bio || "CivicVoice Member."
+          bio: matchedUser.bio || "BirdView Member."
         });
         showAlert(`Welcome back, ${matchedUser.displayName}!`, "success");
       } else {
@@ -116,7 +117,7 @@ export default function LoginSignup({
           following: [],
           followersCount: 0,
           followingCount: 0,
-          bio: "Just joined CivicVoice."
+          bio: "Just joined BirdView."
         };
         onLoginSuccess(generatedUser);
         showAlert(`Authenticated & logged in as ${username}!`, "success");
@@ -151,7 +152,7 @@ export default function LoginSignup({
       };
 
       onLoginSuccess(generatedUser);
-      showAlert(`Welcome to CivicVoice, ${displayName.trim()}! Account created.`, "success");
+      showAlert(`Welcome to BirdView, ${displayName.trim()}! Account created.`, "success");
     }
   };
 
@@ -162,8 +163,8 @@ export default function LoginSignup({
         
         {/* Brand Icon & Label */}
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="flex items-center justify-center w-14 h-14">
-            <img src="/logo.png" alt="CivicVoice" className="w-full h-full object-contain" />
+          <div className="flex items-center justify-center w-14 h-14 rounded-2xl overflow-hidden mb-3 shadow-md">
+            <img src={logoSvg} alt="BirdView" className="w-14 h-14 object-contain rounded-2xl" referrerPolicy="no-referrer" />
           </div>
           <h1 className="font-display font-black text-2xl tracking-tight bg-gradient-to-r from-blue-600 to-twitter-blue bg-clip-text text-transparent">
             BirdView

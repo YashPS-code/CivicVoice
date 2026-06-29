@@ -19,6 +19,7 @@ interface WidgetsProps {
   onOpenVerifyModal: () => void;
   onSelectTag: (tag: string) => void;
   isCurrentUserVerified: boolean;
+  searchQuery: string;
   onSearch: (query: string) => void;
   onOpenForums: () => void;
   onOpenDashboard: () => void;
@@ -46,17 +47,16 @@ export default function Widgets({
   onOpenVerifyModal,
   onSelectTag,
   isCurrentUserVerified,
+  searchQuery,
   onSearch,
   onOpenForums,
   onOpenDashboard,
   onOpenProfile,
 }: WidgetsProps) {
-  const [searchVal, setSearchVal] = React.useState("");
   const wards = CITY_WARDS[selectedCity] || ["All Wards"];
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
-    setSearchVal(v);
     onSearch(v);
   };
 
@@ -71,7 +71,7 @@ export default function Widgets({
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         <input
           type="text"
-          value={searchVal}
+          value={searchQuery}
           onChange={handleSearch}
           placeholder="Search civic posts…"
           className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700
@@ -130,7 +130,7 @@ export default function Widgets({
 
       {/* Footer */}
       <p className="text-[10px] text-slate-300 text-center mt-auto pb-2">
-        CivicVoice · Built for India's civic future
+        BirdView · Built for India's civic future
       </p>
     </aside>
   );

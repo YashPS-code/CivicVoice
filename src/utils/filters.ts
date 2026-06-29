@@ -18,9 +18,12 @@ export function filterFeedItems(
     if (ward !== "All Wards" && item.ward !== ward) return false;
     if (feedFilter !== "all" && item.type !== feedFilter) return false;
 
-    if (item.type === "report") {
-      if (categoryFilter !== "all" && item.category !== categoryFilter) return false;
-      if (statusFilter !== "all" && item.status !== statusFilter) return false;
+    if (categoryFilter !== "all" && (feedFilter === "all" || feedFilter === "report" || feedFilter === "poll")) {
+      if (item.category !== categoryFilter) return false;
+    }
+
+    if (statusFilter !== "all" && (feedFilter === "all" || feedFilter === "report")) {
+      if (item.type !== "report" || item.status !== statusFilter) return false;
     }
 
     if (searchQuery) {

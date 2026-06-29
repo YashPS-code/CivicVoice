@@ -52,7 +52,7 @@ export default function Preferences({ showAlert }: PreferencesProps) {
           PREFERENCES
         </div>
         <h2 className="font-display font-black text-slate-900 text-lg md:text-xl">
-          Personalize CivicVoice
+          Personalize BirdView
         </h2>
         <p className="text-xs text-slate-500 leading-relaxed mt-0.5">
           Control your theme, layout density, notifications, and language settings.

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Megaphone, ShieldCheck, ArrowRight, UserPlus, LogIn, Sparkles } from "lucide-react";
 import { User, Role, City } from "../../types";
-import { MOCK_CITIZENS, MOCK_COUNCILLORS } from "../../mockData";
+import logoSvg from "../../assets/logo.svg";
 
 interface LoginSignupProps {
   onLoginSuccess: (user: User) => void;
@@ -17,67 +17,55 @@ export default function LoginSignup({ onLoginSuccess, showAlert }: LoginSignupPr
   const [city, setCity] = useState<City>("Mumbai");
   const [ward, setWard] = useState("Ward 12 (Andheri West)");
 
-  const handleDemoLogin = (type: "resident" | "official") => {
-    if (type === "resident") {
-      onLoginSuccess({
-        id: "curr_user", username: "active_citizen_india", displayName: "Aarav Patel",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80",
-        role: "citizen", isVerified: true, badgeType: "verified_resident", civicPoints: 180,
-        city: "Mumbai", ward: "Ward 12 (Andheri West)", following: ["cit_1", "cit_2"],
-        followersCount: 142, followingCount: 56,
-        bio: "Civic-minded resident. Passionate about local infrastructure and public parks.",
-      });
-      showAlert("Welcome back, Aarav Patel!", "success");
-    } else {
-      onLoginSuccess({
-        id: "off_2", username: "councillor_hsr", displayName: "Cllr. Sandeep Hegde",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&h=150&q=80",
-        role: "official", isVerified: true, badgeType: "verified_official", civicPoints: 1200,
-        city: "Bengaluru", ward: "Ward 54 (HSR Layout)", following: [],
-        followersCount: 520, followingCount: 89,
-        bio: "Elected Ward Councillor. Ready to listen and issue administrative resolutions.",
-      });
-      showAlert("Welcome, Councillor Sandeep Hegde!", "success");
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim()) { showAlert("Enter a username.", "error"); return; }
+    if (!password.trim()) { showAlert("Enter a password.", "error"); return; }
 
     if (isLoginMode) {
-      const norm = username.toLowerCase().trim();
-      if (norm === "active_citizen_india" || norm === "aarav") { handleDemoLogin("resident"); return; }
-      if (norm === "councillor_hsr" || norm === "sandeep") { handleDemoLogin("official"); return; }
-      const found = [...MOCK_CITIZENS, ...MOCK_COUNCILLORS].find((u) => u.username.toLowerCase() === norm);
-      if (found) {
-        onLoginSuccess({ ...found, following: [], followersCount: 10, followingCount: 10 });
-        showAlert(`Welcome back, ${found.displayName}!`, "success");
-      } else {
-        onLoginSuccess({
-          id: `usr_${Date.now()}`, username: norm, displayName: username,
-          avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80",
-          role: "citizen", isVerified: false, civicPoints: 20,
-          city: "Mumbai", ward: "Ward 12 (Andheri West)",
-          following: [], followersCount: 0, followingCount: 0, bio: "New to CivicVoice.",
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: username.trim(), password }),
         });
-        showAlert("Logged in!", "success");
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert(data.error || "Failed to log in.", "error");
+          return;
+        }
+        onLoginSuccess(data);
+        showAlert(`Welcome back, ${data.displayName}!`, "success");
+      } catch (err) {
+        console.error("Login error:", err);
+        showAlert("Failed to connect to authentication server.", "error");
       }
     } else {
       if (!displayName.trim()) { showAlert("Enter your display name.", "error"); return; }
-      onLoginSuccess({
-        id: `usr_${Date.now()}`, username: username.toLowerCase().replace(/[^a-z0-9_]/g, ""),
-        displayName: displayName.trim(),
-        avatar: role === "official"
-          ? "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=150&h=150&q=80"
-          : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80",
-        role, isVerified: role === "official",
-        badgeType: role === "official" ? "verified_official" : undefined,
-        civicPoints: role === "official" ? 500 : 50,
-        city, ward, following: [], followersCount: 0, followingCount: 0,
-        bio: `Resident of ${ward}, ${city}.`,
-      });
-      showAlert(`Welcome to CivicVoice, ${displayName}!`, "success");
+      try {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: username.trim(),
+            password,
+            displayName: displayName.trim(),
+            role,
+            city,
+            ward: ward.trim(),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert(data.error || "Failed to create account.", "error");
+          return;
+        }
+        onLoginSuccess(data);
+        showAlert(`Welcome to BirdView, ${data.displayName}! Account created.`, "success");
+      } catch (err) {
+        console.error("Registration error:", err);
+        showAlert("Failed to connect to authentication server.", "error");
+      }
     }
   };
 
@@ -91,11 +79,11 @@ export default function LoginSignup({ onLoginSuccess, showAlert }: LoginSignupPr
               style={{ width: `${60 + i * 30}px`, height: `${60 + i * 30}px`, top: `${(i * 80) % 100}%`, left: `${(i * 70 + 20) % 100}%`, opacity: 0.4 }} />
           ))}
         </div>
-        <div className="relative z-10 max-w-xs text-center">
-          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center overflow-hidden shadow-lg">
-            <img src="/logo.png" alt="CivicVoice" className="w-full h-full object-contain" />
+        <div className="relative z-10 max-w-xs text-center flex flex-col items-center justify-center">
+          <div className="w-16 h-16 mb-5 flex items-center justify-center overflow-hidden rounded-xl bg-slate-950/20 shadow-md">
+            <img src={logoSvg} alt="BirdView" className="w-16 h-16 object-contain rounded-xl" referrerPolicy="no-referrer" />
           </div>
-          <h1 className="font-display font-black text-4xl mb-2 tracking-tight">CivicVoice</h1>
+          <h1 className="font-display font-black text-4xl mb-2 tracking-tight">BirdView</h1>
           <p className="text-white/80 text-sm leading-relaxed font-medium">
             India's first civic social platform — connecting residents with their ward representatives.
           </p>
@@ -120,11 +108,11 @@ export default function LoginSignup({ onLoginSuccess, showAlert }: LoginSignupPr
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2.5 mb-6">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-twitter-blue to-cyan-400 flex items-center justify-center overflow-hidden">
-              <img src="/logo.png" alt="" className="w-full h-full object-contain" />
+            <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center">
+              <img src={logoSvg} alt="BirdView" className="w-9 h-9 object-contain rounded-xl" referrerPolicy="no-referrer" />
             </div>
-            <span className="font-display font-bold text-xl bg-gradient-to-r from-twitter-blue to-cyan-500 bg-clip-text text-transparent">
-              CivicVoice
+            <span className="font-display font-bold text-xl bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              BirdView
             </span>
           </div>
 
@@ -190,28 +178,6 @@ export default function LoginSignup({ onLoginSuccess, showAlert }: LoginSignupPr
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
-
-          {/* Demo shortcuts */}
-          <div className="mt-5 border-t border-slate-100 pt-5">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">
-              <Sparkles className="w-3 h-3 text-amber-400" />Demo Access
-            </div>
-            <div className="flex flex-col gap-2">
-              {[
-                { type: "resident" as const, name: "Aarav Patel", sub: "Mumbai · Resident", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80" },
-                { type: "official" as const, name: "Cllr. Sandeep Hegde", sub: "Bengaluru · Official", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&h=150&q=80" },
-              ].map((d) => (
-                <button key={d.type} type="button" onClick={() => handleDemoLogin(d.type)}
-                  className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 hover:border-twitter-blue/30 hover:bg-twitter-light/40 transition text-left group">
-                  <img src={d.avatar} alt="" className="w-8 h-8 rounded-full object-cover border border-white shadow-sm" />
-                  <div>
-                    <p className="text-xs font-bold text-slate-700 group-hover:text-twitter-blue transition">{d.name}</p>
-                    <p className="text-[10px] text-slate-400">{d.sub}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
